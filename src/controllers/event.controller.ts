@@ -7,7 +7,8 @@ export const createEvent = async (req: Request, res: Response) => {
     const userId = (req as any).user;
     const user = await User.findById(userId);
     if (!user || user.role !== 'Official') {
-      return res.status(403).json({ message: 'Only officials can create events' });
+      res.status(403).json({ message: 'Only officials can create events' });
+      return;
     }
 
     const {
@@ -22,6 +23,7 @@ export const createEvent = async (req: Request, res: Response) => {
       otherOfficial,
       organizerPhoneNumber,
     } = req.body;
+    const eventImage = req.file ? req.file.path : undefined;
 
     const newEvent = new Event({
       title,
@@ -34,12 +36,15 @@ export const createEvent = async (req: Request, res: Response) => {
       coordinator,
       otherOfficial,
       organizerPhoneNumber,
+      eventImage,
     });
 
     await newEvent.save();
-    return res.status(201).json({ message: 'Event created', event: newEvent });
+    res.status(201).json({ message: 'Event created', event: newEvent });
+    return;
   } catch (err) {
     console.error('Create event error', err);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
+    return;
   }
 };

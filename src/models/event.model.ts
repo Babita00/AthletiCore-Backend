@@ -22,10 +22,8 @@ export interface IEvent extends Document {
   coordinator: IOfficialContact;
   otherOfficial: IOfficialContact;
   organizerPhoneNumber: string;
-  createdby: {
-    type: mongoose.Schema.Types.ObjectId;
-    ref: 'User';
-  };
+  createdby: mongoose.Types.ObjectId;
+  eventImage: string;
 }
 
 const prizeSchema = new Schema<IPrize>({
@@ -51,6 +49,11 @@ const eventSchema = new Schema<IEvent>(
     coordinator: { type: officialContactSchema, required: true },
     otherOfficial: { type: officialContactSchema, required: true },
     organizerPhoneNumber: { type: String, required: true },
+    eventImage: { type: String, required: false },
+    createdby: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   { timestamps: true },
 );
