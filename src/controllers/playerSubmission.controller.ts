@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import PlayerSubmission from '../models/playerSubmission.model';
 import EventForm from '../models/eventForm.model';
 import Event from '../models/event.model';
+import mongoose from 'mongoose';
 
 export const submitEventForm = async (req: Request, res: Response) => {
   try {
@@ -64,33 +65,39 @@ export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) 
 
 export const reviewPlayerSubmission = async (req: Request, res: Response) => {
   try {
-    const officialId = (req as any).user;
+    const officialId = (req as any).user._id;
     const { submissionId } = req.params;
-    const { status } = req.body; // 'approved' or 'rejected'
+    const { status, note } = req.body;
 
-    if (!['approved', 'rejected'].includes(status)) {
-      res.status(400).json({ message: 'Invalid status value' });
+    if (!mongoose.Types.ObjectId.isValid(submissionId)) {
+      res.status(400).json({ message: 'Invalid submission ID' });
       return;
     }
 
-    const submission = await PlayerSubmission.findById(submissionId).populate('eventId');
+    const submission = await PlayerSubmission.findById(submissionId).populate('event');
     if (!submission) {
       res.status(404).json({ message: 'Submission not found' });
       return;
     }
 
-    if (submission.eventId.createdby.toString() !== officialId.toString()) {
-      res.status(403).json({ message: 'Unauthorized to review this submission' });
+    const event = submission.event as any;
+    if (event.createdby.toString() !== officialId.toString()) {
+      res.status(403).json({ message: 'Unauthorized: Not your event' });
       return;
     }
 
     submission.status = status;
+    if (note) submission.reviewNote = note;
+
     await submission.save();
 
-    res.status(200).json({ message: `Submission ${status}`, submission });
+    res.status(200).json({
+      message: `Submission ${status}`,
+      submission,
+    });
     return;
   } catch (err) {
-    console.error('Review submission error:', err);
+    console.error('Review submission error', err);
     res.status(500).json({ message: 'Server error' });
     return;
   }
