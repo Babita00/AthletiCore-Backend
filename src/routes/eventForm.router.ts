@@ -5,7 +5,10 @@ import { createEventForm, getEventForm } from '../controllers/eventForm.controll
 import {
   submitEventForm,
   getPlayerSubmissionsForEvent,
+  reviewPlayerSubmission,
 } from '../controllers/playerSubmission.controller';
+import { reviewSubmissionSchema } from '../validations/reviewSubmissionSchema';
+import { validate } from '../middleware/validate';
 
 const router = express.Router();
 
@@ -20,5 +23,15 @@ router.post('/:eventId/submit', userAuth, submitEventForm);
 
 // Official gets submissions for event
 router.get('/:eventId/submissions', userAuth, getPlayerSubmissionsForEvent);
+
+// routes/eventForm.routes.ts
+
+// Official approves/rejects a player submission
+router.patch(
+  '/submissions/:submissionId/review',
+  userAuth,
+  validate(reviewSubmissionSchema), // use Zod or Joi
+  reviewPlayerSubmission,
+);
 
 export default router;
