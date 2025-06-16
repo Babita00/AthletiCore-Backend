@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Event from '../models/event.model';
 import User from '../models/user.model';
+import mongoose from 'mongoose';
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
@@ -37,6 +38,7 @@ export const createEvent = async (req: Request, res: Response) => {
       otherOfficial,
       organizerPhoneNumber,
       eventImage,
+      createdBy: userId,
     });
 
     await newEvent.save();
@@ -44,6 +46,141 @@ export const createEvent = async (req: Request, res: Response) => {
     return;
   } catch (err) {
     console.error('Create event error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const getAllEvents = async (_req: Request, res: Response) => {
+  try {
+    const events = await Event.find();
+    res.status(200).json(events);
+    return;
+  } catch (err) {
+    console.error('Get all events error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const getEventById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid event ID' });
+      return;
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      res.status(404).json({ message: 'Event not found' });
+      return;
+    }
+
+    res.status(200).json(event);
+    return;
+  } catch (err) {
+    console.error('Get event error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const getMyEvents = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({ message: 'Invalid user ID' });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'Official') {
+      res.status(403).json({ message: 'Only officials can view their events' });
+      return;
+    }
+
+    const events = await Event.find({ createdBy: userId });
+
+    res.status(200).json(events);
+    return;
+  } catch (err) {
+    console.error('Get my events error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const updateEvent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid event ID' });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'Official') {
+      res.status(403).json({ message: 'Only officials can update events' });
+      return;
+    }
+
+    const updateData = {
+      ...req.body,
+      eventImage: req.file ? req.file.path : undefined,
+    };
+
+    // Remove undefined fields (e.g. no new image provided)
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key],
+    );
+
+    const updatedEvent = await Event.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!updatedEvent) {
+      res.status(404).json({ message: 'Event not found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Event updated', event: updatedEvent });
+    return;
+  } catch (err) {
+    console.error('Update event error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const deleteEvent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid event ID' });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'Official') {
+      res.status(403).json({ message: 'Only officials can delete events' });
+      return;
+    }
+
+    const deletedEvent = await Event.findByIdAndDelete(id);
+    if (!deletedEvent) {
+      res.status(404).json({ message: 'Event not found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Event deleted' });
+    return;
+  } catch (err) {
+    console.error('Delete event error', err);
     res.status(500).json({ message: 'Server error' });
     return;
   }
