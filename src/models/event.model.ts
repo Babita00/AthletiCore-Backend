@@ -16,8 +16,8 @@ export interface IEvent extends Document {
   description: string;
   venue: string;
   date: Date;
-  weightCategories: string[]; // e.g. ["60kg", "70kg"]
-  competitionType: 'Male' | 'Female' | 'All';
+  weightCategories: string[];
+  competitionType: 'Male' | 'Female' | 'Open';
   prizes: IPrize[];
   coordinator: IOfficialContact;
   otherOfficial: IOfficialContact;
@@ -44,11 +44,11 @@ const eventSchema = new Schema<IEvent>(
     venue: { type: String, required: true },
     date: { type: Date, required: true },
     weightCategories: [{ type: String, required: true }],
-    competitionType: { type: String, enum: ['Male', 'Female', 'All'], required: true },
+    competitionType: { type: String, enum: ['Male', 'Female', 'Open'], required: true },
     prizes: [prizeSchema],
-    coordinator: { type: officialContactSchema, required: true },
-    otherOfficial: { type: officialContactSchema, required: true },
-    organizerPhoneNumber: { type: String, required: true },
+    coordinator: { type: officialContactSchema, required: false },
+    otherOfficial: { type: officialContactSchema, required: false },
+    organizerPhoneNumber: { type: String, required: false },
     eventImage: { type: String, required: false },
     createdby: {
       type: mongoose.Schema.Types.ObjectId,
