@@ -5,5 +5,7 @@ export const createAnnouncementSchema = z.object({
     title: z.string().min(3, 'Title must be at least 3 characters'),
     message: z.string().min(10, 'Message must be at least 10 characters'),
     event: z.string().optional(),
+    expiryDate: z.string().datetime().optional(), // ISO string
+    attachments: z.array(z.string().url()).optional(), // if URLs provided
   }),
 });

@@ -24,6 +24,7 @@ export const createEvent = async (req: Request, res: Response) => {
       otherOfficial,
       organizerPhoneNumber,
     } = req.body;
+
     const eventImage = req.file ? req.file.path : undefined;
 
     const newEvent = new Event({
@@ -42,6 +43,7 @@ export const createEvent = async (req: Request, res: Response) => {
     });
 
     const savedEvent = await newEvent.save();
+
     const populatedEvent = await savedEvent.populate('createdby', 'fullName');
     res.status(201).json({
       message: 'Event created',
