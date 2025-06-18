@@ -38,11 +38,16 @@ export const createEvent = async (req: Request, res: Response) => {
       otherOfficial,
       organizerPhoneNumber,
       eventImage,
-      createdBy: userId,
+      createdby: userId,
     });
 
-    await newEvent.save();
-    res.status(201).json({ message: 'Event created', event: newEvent });
+    const savedEvent = await newEvent.save();
+    const populatedEvent = await savedEvent.populate('createdby', 'fullName');
+    res.status(201).json({
+      message: 'Event created',
+      event: populatedEvent,
+    });
+
     return;
   } catch (err) {
     console.error('Create event error', err);
@@ -89,20 +94,26 @@ export const getEventById = async (req: Request, res: Response) => {
 
 export const getMyEvents = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user;
+    const user = (req as any).user;
+
+    if (!user || !user._id) {
+      res.status(401).json({ message: 'Unauthorized: No user data found' });
+      return;
+    }
+
+    const userId = user._id;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       res.status(400).json({ message: 'Invalid user ID' });
       return;
     }
 
-    const user = await User.findById(userId);
-    if (!user || user.role !== 'Official') {
+    if (user.role !== 'Official') {
       res.status(403).json({ message: 'Only officials can view their events' });
       return;
     }
 
-    const events = await Event.find({ createdBy: userId });
+    const events = await Event.find({ createdby: userId });
 
     res.status(200).json(events);
     return;

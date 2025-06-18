@@ -16,8 +16,8 @@ const router = Router();
 
 router.post('/create', userAuth, uploadEventImage, validate(createEventSchema), createEvent);
 router.get('/', getAllEvents);
-router.get('/:id', getEventById);
 router.get('/my-events', userAuth, getMyEvents);
+router.get('/:id', getEventById);
 router.patch('/:id', userAuth, uploadEventImage, updateEvent);
 router.delete('/:id', userAuth, deleteEvent);
 
