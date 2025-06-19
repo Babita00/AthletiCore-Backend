@@ -31,7 +31,7 @@ router.patch('/:formId', userAuth, updateEventForm);
 //Official deletes the form
 router.delete('/:formId', userAuth, deleteEventForm);
 
-// --------------routes/eventForm.routes.ts-------------------
+// --------------Player Form Submission-------------------
 
 // Player submits form
 router.post('/:eventId/submit', userAuth, submitEventForm);
@@ -45,7 +45,7 @@ router.patch('/:submissionId/update', userAuth, updateSubmittedForm);
 // player deletes their submission
 router.delete('/:submissionId/delete', userAuth, deleteSubmittedForm);
 
-// Official approves/rejects a player submission
+//------------ Official approves/rejects a player submission-------------
 router.patch(
   '/submissions/:submissionId/review',
   userAuth,
