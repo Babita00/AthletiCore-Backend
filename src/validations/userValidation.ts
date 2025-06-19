@@ -9,7 +9,7 @@ export const registerSchema = z
   .object({
     fullName: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email'),
-    username: z.string().min(3, 'Username must be at least 3 characters'),
+    username: z.string().optional(),
     phone_number: z.string().optional(),
     role: roleEnum,
     gender: genderEnum,
