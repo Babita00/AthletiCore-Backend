@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Common fields
-const genderEnum = z.enum(['Male', 'Female', 'Other']);
+const genderEnum = z.enum(['Male', 'Female', 'Other']).optional();
 const roleEnum = z.enum(['Official', 'Player']);
 
 // ✅ Register validation
