@@ -6,7 +6,7 @@ import User from '../models/user.model';
 
 export const createEventForm = async (req: Request, res: Response) => {
   try {
-    const officialId = (req as any).user;
+    const officialId = (req as any).user.id;
     const { eventId, fields } = req.body;
 
     // Check official and event validity
@@ -17,8 +17,12 @@ export const createEventForm = async (req: Request, res: Response) => {
     }
 
     const event = await Event.findById(eventId);
-    if (!event || event.createdby.toString() !== officialId.toString()) {
-      res.status(404).json({ message: 'Event not found or unauthorized' });
+    if (!event) {
+      res.status(404).json({ message: 'Event not found ' });
+      return;
+    }
+    if (event.createdby.toString() !== officialId.toString()) {
+      res.status(404).json({ message: ' user id does not match' });
       return;
     }
 

@@ -7,9 +7,9 @@ import mongoose from 'mongoose';
 
 export const submitEventForm = async (req: Request, res: Response) => {
   try {
-    const playerId = (req as any).user;
+    const playerId = (req as any).user.id; // Make sure to get `id`
     const { eventId } = req.params;
-    const { values } = req.body;
+    const { values } = req.body; // values = formFields
 
     const form = await EventForm.findOne({ eventId });
     if (!form) {
@@ -24,10 +24,9 @@ export const submitEventForm = async (req: Request, res: Response) => {
     }
 
     const submission = new PlayerSubmission({
-      eventId,
-      formId: form._id,
-      playerId,
-      values,
+      event: eventId,
+      player: playerId,
+      formFields: values, // 👈 renamed
     });
 
     await submission.save();
@@ -42,7 +41,7 @@ export const submitEventForm = async (req: Request, res: Response) => {
 
 export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) => {
   try {
-    const officialId = (req as any).user;
+    const officialId = (req as any).user.id;
     const { eventId } = req.params;
 
     const event = await Event.findById(eventId);
@@ -51,7 +50,12 @@ export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) 
       return;
     }
 
-    const submissions = await PlayerSubmission.find({ eventId });
+    const submissions = await PlayerSubmission.find({ event: eventId });
+    if (!submissions) {
+      res.status(404).json({ message: 'Form not found for this event' });
+      return;
+    }
+
     res.status(200).json(submissions);
     return;
   } catch (err) {
@@ -65,7 +69,7 @@ export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) 
 
 export const reviewPlayerSubmission = async (req: Request, res: Response) => {
   try {
-    const officialId = (req as any).user._id;
+    const officialId = (req as any).user.id;
     const { submissionId } = req.params;
     const { status, note } = req.body;
 
@@ -87,14 +91,16 @@ export const reviewPlayerSubmission = async (req: Request, res: Response) => {
     }
 
     submission.status = status;
+
     if (note) submission.reviewNote = note;
 
     await submission.save();
 
     res.status(200).json({
-      message: `Submission ${status}`,
+      message: `Submission ${submission.status}`,
       submission,
     });
+
     return;
   } catch (err) {
     console.error('Review submission error', err);
