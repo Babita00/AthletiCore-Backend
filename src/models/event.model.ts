@@ -7,7 +7,7 @@ export interface IPrize {
 
 export interface IOfficialContact {
   name: string;
-  phone_number: string;
+  phone_number: number;
   email?: string;
 }
 
@@ -33,7 +33,7 @@ const prizeSchema = new Schema<IPrize>({
 
 const officialContactSchema = new Schema<IOfficialContact>({
   name: { type: String, required: true },
-  phone_number: { type: String, required: true },
+  phone_number: { type: Number, required: true },
   email: { type: String },
 });
 
