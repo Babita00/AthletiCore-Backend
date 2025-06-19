@@ -9,7 +9,7 @@ const prizeSchema = z.object({
 // Official Contact Schema
 const officialContactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  phone_number: z.number().optional(),
+  phone_number: z.string().optional(),
   email: z.string().email('Invalid email').optional(),
 });
 
