@@ -7,7 +7,8 @@ import User from '../models/user.model';
 export const createEventForm = async (req: Request, res: Response) => {
   try {
     const officialId = (req as any).user.id;
-    const { eventId, fields } = req.body;
+    const { eventId } = req.params;
+    const { fields } = req.body;
 
     // Check official and event validity
     const user = await User.findById(officialId);
@@ -71,26 +72,26 @@ export const updateEventForm = async (req: Request, res: Response) => {
 
     const form = await EventForm.findById(formId);
     if (!form) {
-       res.status(404).json({ message: 'Form not found' });
-       return
+      res.status(404).json({ message: 'Form not found' });
+      return;
     }
 
     // Check if the user is the creator of the form
     if (form.createdBy.toString() !== officialId.toString()) {
-       res.status(403).json({ message: 'Unauthorized to update this form' });
-       return
+      res.status(403).json({ message: 'Unauthorized to update this form' });
+      return;
     }
 
     // Update fields
     form.fields = fields;
     await form.save();
 
-     res.status(200).json({ message: 'Form updated', form });
-     return
+    res.status(200).json({ message: 'Form updated', form });
+    return;
   } catch (err) {
     console.error('Update form error:', err);
-     res.status(500).json({ message: 'Server error' });
-     return
+    res.status(500).json({ message: 'Server error' });
+    return;
   }
 };
 
@@ -102,22 +103,22 @@ export const deleteEventForm = async (req: Request, res: Response) => {
 
     const form = await EventForm.findById(formId);
     if (!form) {
-       res.status(404).json({ message: 'Form not found' });
-       return
+      res.status(404).json({ message: 'Form not found' });
+      return;
     }
 
     if (form.createdBy.toString() !== officialId.toString()) {
-       res.status(403).json({ message: 'Unauthorized to delete this form' });
-       return
+      res.status(403).json({ message: 'Unauthorized to delete this form' });
+      return;
     }
 
     await EventForm.findByIdAndDelete(formId);
 
-     res.status(200).json({ message: 'Form deleted successfully' });
-     return
+    res.status(200).json({ message: 'Form deleted successfully' });
+    return;
   } catch (err) {
     console.error('Delete form error:', err);
-     res.status(500).json({ message: 'Server error' });
-     return
+    res.status(500).json({ message: 'Server error' });
+    return;
   }
 };

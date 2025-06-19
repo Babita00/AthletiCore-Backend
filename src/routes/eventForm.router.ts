@@ -1,13 +1,18 @@
 // routes/eventForm.routes.ts
 import express from 'express';
 import { userAuth } from '../middleware/authMiddleware';
-import { createEventForm, getEventForm ,updateEventForm, deleteEventForm} from '../controllers/eventForm.controller';
+import {
+  createEventForm,
+  getEventForm,
+  updateEventForm,
+  deleteEventForm,
+} from '../controllers/eventForm.controller';
 import {
   submitEventForm,
   getPlayerSubmissionsForEvent,
   reviewPlayerSubmission,
   updateSubmittedForm,
-  deleteSubmittedForm
+  deleteSubmittedForm,
 } from '../controllers/playerSubmission.controller';
 import { reviewSubmissionSchema } from '../validations/reviewSubmissionSchema';
 import { validate } from '../middleware/validate';
@@ -15,7 +20,7 @@ import { validate } from '../middleware/validate';
 const router = express.Router();
 
 // Official creates form for an event
-router.post('/', userAuth, createEventForm);
+router.post('/:eventId', userAuth, createEventForm);
 
 // Get form structure for an event
 router.get('/:eventId', getEventForm);
@@ -35,18 +40,10 @@ router.post('/:eventId/submit', userAuth, submitEventForm);
 router.get('/:eventId/submissions', userAuth, getPlayerSubmissionsForEvent);
 
 // Player updates their submission
-router.put(
-  '/submissions/:submissionId/update',
-  userAuth,
-  updateSubmittedForm
-);
+router.patch('/:submissionId/update', userAuth, updateSubmittedForm);
 
 // player deletes their submission
-  router.delete('/submissions/:submissionId/delete',
-  userAuth,
-  deleteSubmittedForm
-);
-
+router.delete('/:submissionId/delete', userAuth, deleteSubmittedForm);
 
 // Official approves/rejects a player submission
 router.patch(
