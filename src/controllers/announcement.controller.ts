@@ -27,8 +27,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       title,
       message,
       event: event || undefined,
-      createdBy: officialId,
-      updatedBy: officialId,
       expiryDate: expiryDate ? new Date(expiryDate) : undefined,
       attachments,
     });

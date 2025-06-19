@@ -3,6 +3,7 @@ import {
   createAnnouncement,
   getAnnouncements,
   updateAnnouncement,
+  deleteAnnouncement,
 } from '../controllers/announcement.controller';
 import { userAuth } from '../middleware/authMiddleware';
 import { validate } from '../middleware/validate';
@@ -18,7 +19,7 @@ router.post(
   createAnnouncement,
 );
 router.get('/', getAnnouncements);
-
 router.patch('/:id', userAuth, uploadAnnouncementFiles.array('attachments', 5), updateAnnouncement);
+router.delete('/:id', userAuth, deleteAnnouncement);
 
 export default router;
