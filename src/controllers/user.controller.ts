@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { fullName, email, phoneNumber, username, role, gender, password, age, weight } =
+    const { fullName, email, phone_number, username, role, gender, password, age, weight } =
       req.body;
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -21,7 +21,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       fullName,
       email,
       username,
-      phoneNumber,
+      phone_number,
       role,
       gender,
       password,

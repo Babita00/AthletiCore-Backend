@@ -10,7 +10,7 @@ export const registerSchema = z
     fullName: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email'),
     username: z.string().min(3, 'Username must be at least 3 characters'),
-    phoneNumber: z.string().optional(),
+    phone_number: z.number().optional(),
     role: roleEnum,
     gender: genderEnum,
     password: z.string().min(6, 'Password must be at least 6 characters'),
