@@ -9,7 +9,7 @@ export interface IUser extends Document {
   username: string;
   phone_number?: number;
   role: 'Official' | 'Player';
-  gender: 'Male' | 'Female' | 'Other';
+  gender: 'Male' | 'Female' | 'Other' | null | '';
   password: string;
   age?: number;
   weight?: number;
@@ -30,7 +30,7 @@ const UserSchema = new Schema<IUser>(
     username: { type: String, unique: true },
     phone_number: { type: Number },
     role: { type: String, enum: ['Official', 'Player'], required: true },
-    gender: { type: String, enum: ['Male', 'Female', 'Other'], required: false },
+    gender: { type: String, enum: ['Male', 'Female', 'Other', ''], required: false },
     password: { type: String, required: true },
     age: { type: Number },
     weight: { type: Number },

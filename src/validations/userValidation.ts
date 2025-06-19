@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 // Common fields
-const genderEnum = z.enum(['Male', 'Female', 'Other']).optional();
 const roleEnum = z.enum(['Official', 'Player']);
 
 // ✅ Register validation
@@ -12,7 +11,7 @@ export const registerSchema = z
     username: z.string().optional(),
     phone_number: z.string().optional(),
     role: roleEnum,
-    gender: genderEnum,
+    gender: z.enum(['Male', 'Female', 'Other', '']).optional().or(z.literal('')),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     age: z.number().int().positive().optional(),
     weight: z.number().positive().optional(),
