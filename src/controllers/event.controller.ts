@@ -26,7 +26,7 @@ export const createEvent = async (req: Request, res: Response) => {
     } = req.body;
 
     const eventImage = req.file ? req.file.path : undefined;
-
+    console.log('Event image path:', eventImage);
     const newEvent = new Event({
       title,
       description,

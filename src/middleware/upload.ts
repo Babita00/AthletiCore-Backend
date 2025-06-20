@@ -1,10 +1,19 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
-// Storage config (for local storage)
+// Define the upload path
+const uploadPath = path.join(__dirname, '../uploads/events'); // Adjust if needed
+
+// Ensure folder exists
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+// Storage config
 const storage = multer.diskStorage({
   destination: function (_req, _file, cb) {
-    cb(null, 'uploads/events/'); // Make sure this folder exists or create dynamically
+    cb(null, uploadPath);
   },
   filename: function (_req, file, cb) {
     cb(null, `${Date.now()}-${file.originalname}`);
@@ -18,14 +27,15 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   const mimeType = allowedTypes.test(file.mimetype);
 
   if (extName && mimeType) {
-    return cb(null, true);
+    cb(null, true);
   } else {
     cb(new Error('Only images are allowed (jpeg, jpg, png)'));
   }
 };
 
+// Exported multer middleware
 export const uploadEventImage = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
-}).single('eventImage'); // This is the field name you'll use in the form
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+}).single('eventImage');

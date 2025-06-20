@@ -9,7 +9,6 @@ import eventFormRoutes from './routes/eventForm.router';
 import announcementRoutes from './routes/announcement.router';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-
 // Load environment variables
 dotenv.config();
 
@@ -20,10 +19,7 @@ connectDB();
 const app = express();
 
 // List of allowed origins for CORS
-const allowedOrigins = [
-  'http://localhost:8081',
-  'http://192.168.254.36:8081'
-];
+const allowedOrigins = ['http://localhost:8081', 'http://192.168.254.36:8081'];
 
 // CORS middleware configuration
 app.use(
@@ -37,8 +33,11 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware
 app.use(express.json());
