@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPrize {
   prizeTitle: string;
-  weightCategory?: string;
+  prize?: string;
 }
 
 export interface IOfficialContact {
@@ -27,8 +27,8 @@ export interface IEvent extends Document {
 }
 
 const prizeSchema = new Schema<IPrize>({
-  prizeTitle: { type: String, required: true },
-  weightCategory: { type: String },
+  prizeTitle: { type: String },
+  prize: { type: String },
 });
 
 const officialContactSchema = new Schema<IOfficialContact>({
@@ -43,8 +43,8 @@ const eventSchema = new Schema<IEvent>(
     description: { type: String, required: true },
     venue: { type: String, required: true },
     date: { type: Date, required: true },
-    weightCategories: [{ type: String, required: true }],
-    competitionType: { type: String, enum: ['Male', 'Female', 'Open'], required: true },
+    weightCategories: [{ type: String }],
+    competitionType: { type: String, enum: ['Male', 'Female', 'Open'] },
     prizes: [prizeSchema],
     coordinator: { type: officialContactSchema, required: false },
     otherOfficial: { type: officialContactSchema, required: false },

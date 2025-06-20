@@ -2,15 +2,15 @@ import { z } from 'zod';
 
 // Prize Schema
 const prizeSchema = z.object({
-  prizeTitle: z.string().min(1, 'Prize title is required'),
-  weightCategory: z.string().optional(),
+  prizeTitle: z.string().optional(),
+  prize: z.string().optional(),
 });
 
 // Official Contact Schema
 const officialContactSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().optional(),
   phone_number: z.string().optional(),
-  email: z.string().email('Invalid email').optional(),
+  email: z.string().optional(),
 });
 
 // Main Event Schema
@@ -25,10 +25,10 @@ export const createEventSchema = z.object({
     .array(z.string().min(1, 'Weight category is required'))
     .min(1, 'At least one weight category is required'),
   competitionType: z.enum(['Male', 'Female', 'Open']),
-  prizes: z.array(prizeSchema).min(1, 'At least one prize is required'),
+  prizes: z.array(prizeSchema).optional(),
   coordinator: officialContactSchema,
   otherOfficial: officialContactSchema.optional(),
-  organizerPhoneNumber: z.string().min(5, 'Organizer phone is required').optional(),
-  eventImage: z.string().url('Invalid image URL').optional(),
+  organizerPhoneNumber: z.string().optional(),
+  eventImage: z.string().optional(),
   createdby: z.string().optional(),
 });
