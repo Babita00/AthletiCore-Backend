@@ -6,7 +6,7 @@ const prizeSchema = z.object({
   prize: z.string().optional(),
 });
 
-// Official Contact Schema
+// Official Contact Schema - all fields optional again
 const officialContactSchema = z.object({
   name: z.string().optional(),
   phone_number: z.string().optional(),
@@ -21,12 +21,10 @@ export const createEventSchema = z.object({
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Invalid date format',
   }),
-  weightCategories: z
-    .array(z.string().min(1, 'Weight category is required'))
-    .min(1, 'At least one weight category is required'),
-  competitionType: z.enum(['Male', 'Female', 'Open']),
+  weightCategories: z.array(z.string()).optional(),
+  competitionType: z.enum(['Male', 'Female', 'Open']).optional(),
   prizes: z.array(prizeSchema).optional(),
-  coordinator: officialContactSchema,
+  coordinator: officialContactSchema.optional(), // whole object optional
   otherOfficial: officialContactSchema.optional(),
   organizerPhoneNumber: z.string().optional(),
   eventImage: z.string().optional(),

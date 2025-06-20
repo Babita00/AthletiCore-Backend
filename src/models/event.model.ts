@@ -32,8 +32,8 @@ const prizeSchema = new Schema<IPrize>({
 });
 
 const officialContactSchema = new Schema<IOfficialContact>({
-  name: { type: String, required: true },
-  phone_number: { type: Number, required: true },
+  name: { type: String },
+  phone_number: { type: Number },
   email: { type: String },
 });
 

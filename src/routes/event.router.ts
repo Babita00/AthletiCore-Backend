@@ -14,7 +14,7 @@ import { uploadEventImage } from '../middleware/upload';
 
 const router = Router();
 
-router.post('/create', userAuth, uploadEventImage, createEvent);
+router.post('/create', userAuth, uploadEventImage, validate(createEventSchema), createEvent);
 router.get('/', getAllEvents);
 router.get('/my-events', userAuth, getMyEvents);
 router.get('/:id', getEventById);
