@@ -1,5 +1,4 @@
 // server.ts
-
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db';
@@ -9,6 +8,8 @@ import eventFormRoutes from './routes/eventForm.router';
 import announcementRoutes from './routes/announcement.router';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
+
 // Load environment variables
 dotenv.config();
 
@@ -36,11 +37,11 @@ app.use(
   }),
 );
 
+// Middleware
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Middleware
-app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cookieParser());
 
 // API Routes

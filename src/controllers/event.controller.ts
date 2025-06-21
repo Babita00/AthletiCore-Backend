@@ -25,8 +25,12 @@ export const createEvent = async (req: Request, res: Response) => {
       organizerPhoneNumber,
     } = req.body;
 
-    const eventImage = req.file ? req.file.path : undefined;
-    console.log('Event image path:', eventImage);
+    let eventImage;
+    if (req.file) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      eventImage = `${baseUrl}/uploads/events/${req.file.filename}`;
+    }
+
     const newEvent = new Event({
       title,
       description,
