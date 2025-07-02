@@ -74,30 +74,6 @@ export const getAllEvents = async (_req: Request, res: Response) => {
   }
 };
 
-export const getEventById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ message: 'Invalid event ID' });
-      return;
-    }
-
-    const event = await Event.findById(id);
-    if (!event) {
-      res.status(404).json({ message: 'Event not found' });
-      return;
-    }
-
-    res.status(200).json(event);
-    return;
-  } catch (err) {
-    console.error('Get event error', err);
-    res.status(500).json({ message: 'Server error' });
-    return;
-  }
-};
-
 export const getMyEvents = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
@@ -125,6 +101,30 @@ export const getMyEvents = async (req: Request, res: Response) => {
     return;
   } catch (err) {
     console.error('Get my events error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
+export const getEventById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid event ID' });
+      return;
+    }
+
+    const event = await Event.findById(id);
+    if (!event) {
+      res.status(404).json({ message: 'Event not found' });
+      return;
+    }
+
+    res.status(200).json(event);
+    return;
+  } catch (err) {
+    console.error('Get event error', err);
     res.status(500).json({ message: 'Server error' });
     return;
   }

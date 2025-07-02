@@ -7,45 +7,55 @@ import {
   updateEventForm,
   deleteEventForm,
 } from '../controllers/eventForm.controller';
+
 import {
   submitEventForm,
   getPlayerSubmissionsForEvent,
   reviewPlayerSubmission,
-  updateSubmittedForm,
+  updateFormFieldsByPlayer,
   deleteSubmittedForm,
+  updateFinalStatsByOfficial,
 } from '../controllers/playerSubmission.controller';
+
 import { reviewSubmissionSchema } from '../validations/reviewSubmissionSchema';
 import { validate } from '../middleware/validate';
 
 const router = express.Router();
 
-// Official creates form for an event
-router.post('/:eventId', userAuth, createEventForm);
+// ---------------------- EVENT FORMS (Official) ----------------------
 
-// Get form structure for an event
-router.get('/:eventId', getEventForm);
+// Create a form for an event
+router.post('/:eventId/forms', userAuth, createEventForm);
 
-// Official updates the form
-router.patch('/:formId', userAuth, updateEventForm);
+// Get form for an event
+router.get('/:eventId/forms', getEventForm);
 
-//Official deletes the form
-router.delete('/:formId', userAuth, deleteEventForm);
+// Update a specific form
+router.patch('/forms/:formId', userAuth, updateEventForm);
 
-// --------------Player Form Submission-------------------
+// Delete a specific form
+router.delete('/forms/:formId', userAuth, deleteEventForm);
 
-// Player submits form
-router.post('/:eventId/submit', userAuth, submitEventForm);
+// ------------------ PLAYER FORM SUBMISSION (Player) ------------------
 
-// Official gets submissions for event
+// Submit a form for an event
+router.post('/:eventId/submissions', userAuth, submitEventForm);
+
+// Update form submission (player can update their fields)
+router.patch('/submissions/:submissionId', userAuth, updateFormFieldsByPlayer);
+
+// Delete player’s own submission
+router.delete('/submissions/:submissionId', userAuth, deleteSubmittedForm);
+
+// ----------------- EVENT SUBMISSIONS (Official) ------------------
+
+// Get all player submissions for an event
 router.get('/:eventId/submissions', userAuth, getPlayerSubmissionsForEvent);
 
-// Player updates their submission
-router.patch('/:submissionId/update', userAuth, updateSubmittedForm);
+// Update final stats (e.g., weight class, rack height) after weigh-in
+router.patch('/submissions/:submissionId/stats', userAuth, updateFinalStatsByOfficial);
 
-// player deletes their submission
-router.delete('/:submissionId/delete', userAuth, deleteSubmittedForm);
-
-//------------ Official approves/rejects a player submission-------------
+// Review a player submission (approve/reject)
 router.patch(
   '/submissions/:submissionId/review',
   userAuth,
