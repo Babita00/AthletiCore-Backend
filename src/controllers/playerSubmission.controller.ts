@@ -167,24 +167,20 @@ export const getMySubmissions = async (req: Request, res: Response) => {
 
 export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) => {
   try {
-    const officialId = (req as any).user.id;
-
-    if ((req as any).user.role !== 'official') {
-      res.status(403).json({ message: 'Unauthorized: Officials only' });
-      return;
-    }
-
+    const userId = (req as any).user.id;
     const { eventId } = req.params;
 
     const event = await Event.findById(eventId);
-    if (!event || event.createdby.toString() !== officialId.toString()) {
-      res.status(403).json({ message: 'Unauthorized access to submissions' });
+    if (!event) {
+      res.status(404).json({ message: 'Event not found' });
       return;
     }
 
+    // Fetch all submissions for this event
     const submissions = await PlayerSubmission.find({ event: eventId });
-    if (!submissions) {
-      res.status(404).json({ message: 'Form not found for this event' });
+
+    if (!submissions || submissions.length === 0) {
+      res.status(404).json({ message: 'No submissions found for this event' });
       return;
     }
 
