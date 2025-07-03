@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import LiftAttempt from '../models/liftAttempt.model';
 import User from '../models/user.model';
 import Event from '../models/event.model';
-import PlayerSubmission from '../models/playerSubmission.model'; // if not already imported
+import PlayerSubmission from '../models/playerSubmission.model';
 
 // Initialize 3 attempts for each lift type
 export const initializeLiftAttempts = async (req: Request, res: Response) => {
