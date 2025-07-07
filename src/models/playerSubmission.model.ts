@@ -2,8 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPlayerSubmission extends Document {
   event: mongoose.Types.ObjectId;
-  player: mongoose.Types.ObjectId;
-  user: mongoose.Types.ObjectId; // Reference to the user who submitted
+  user: mongoose.Types.ObjectId;
   formFields: { key: string; value: string }[];
   status: 'pending' | 'approved' | 'rejected';
   reviewNote?: string;
@@ -60,6 +59,6 @@ const playerSubmissionSchema = new Schema<IPlayerSubmission>(
   },
   { timestamps: true },
 );
-playerSubmissionSchema.index({ event: 1, player: 1 }, { unique: true });
+playerSubmissionSchema.index({ event: 1, user: 1 }, { unique: true });
 
 export default mongoose.model<IPlayerSubmission>('PlayerSubmission', playerSubmissionSchema);

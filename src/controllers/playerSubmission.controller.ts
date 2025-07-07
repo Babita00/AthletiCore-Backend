@@ -1,7 +1,6 @@
 // controllers/playerSubmission.controller.ts
 import { Request, Response } from 'express';
 import PlayerSubmission from '../models/playerSubmission.model';
-import User from '../models/user.model';
 import EventForm from '../models/eventForm.model';
 import Event from '../models/event.model';
 import mongoose from 'mongoose';
@@ -9,13 +8,14 @@ import mongoose from 'mongoose';
 // ---- For Players -------
 export const submitEventForm = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
 
-    if ((req as any).user.role.toLowerCase() !== 'player') {
+    if (user.role !== 'Player') {
       res.status(403).json({ message: 'Unauthorized: Player only' });
       return;
     }
 
+    const userId = user._id.toString();
     const { eventId } = req.params;
     const { formFields } = req.body;
 
@@ -31,7 +31,11 @@ export const submitEventForm = async (req: Request, res: Response) => {
       return;
     }
 
-    const alreadySubmitted = await PlayerSubmission.findOne({ event: eventId, user: userId });
+    const alreadySubmitted = await PlayerSubmission.findOne({
+      event: eventId,
+      user: userId,
+    });
+
     if (alreadySubmitted) {
       res.status(409).json({ message: 'You have already submitted for this event.' });
       return;
@@ -40,7 +44,7 @@ export const submitEventForm = async (req: Request, res: Response) => {
     const submission = new PlayerSubmission({
       event: eventId,
       user: userId,
-      formFields: formFields,
+      formFields,
     });
 
     await submission.save();
@@ -57,7 +61,7 @@ export const updateFormFieldsByPlayer = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
 
-    if ((req as any).user.role.toLowerCase() !== 'player') {
+    if ((req as any).user.role !== 'Player') {
       res.status(403).json({ message: 'Unauthorized: Player only' });
       return;
     }
@@ -146,8 +150,8 @@ export const deleteSubmittedForm = async (req: Request, res: Response) => {
 export const getMySubmissions = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-
-    if ((req as any).user.role !== 'player') {
+    const { eventId } = req.params;
+    if ((req as any).user.role !== 'Player') {
       res.status(403).json({ message: 'Unauthorized: Player only' });
       return;
     }
@@ -193,11 +197,43 @@ export const getPlayerSubmissionsForEvent = async (req: Request, res: Response) 
   }
 };
 
+export const getPlayerSubmissionForEventById = async (req: Request, res: Response) => {
+  try {
+    const officialId = (req as any).user.id;
+
+    const { eventId, submissionId } = req.params;
+
+    if (
+      !mongoose.Types.ObjectId.isValid(eventId) ||
+      !mongoose.Types.ObjectId.isValid(submissionId)
+    ) {
+      res.status(400).json({ message: 'Invalid event ID or submission ID' });
+      return;
+    }
+
+    const submission = await PlayerSubmission.findOne({ _id: submissionId, event: eventId })
+      .populate('user') // Optional: include player details
+      .populate('event'); // Optional: include event details
+
+    if (!submission) {
+      res.status(404).json({ message: 'Submission not found for this event' });
+      return;
+    }
+
+    // const event = submission.event as any;
+
+    res.status(200).json({ submission });
+  } catch (err) {
+    console.error('Error fetching submission by ID for event:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const reviewPlayerSubmission = async (req: Request, res: Response) => {
   try {
     const officialId = (req as any).user.id;
 
-    if ((req as any).user.role !== 'official') {
+    if ((req as any).user.role !== 'Official') {
       res.status(403).json({ message: 'Unauthorized: Officials only' });
       return;
     }
@@ -244,7 +280,7 @@ export const updateFinalStatsByOfficial = async (req: Request, res: Response) =>
   try {
     const officialId = (req as any).user.id;
 
-    if ((req as any).user.role !== 'official') {
+    if ((req as any).user.role !== 'Official') {
       res.status(403).json({ message: 'Unauthorized: Officials only' });
       return;
     }

@@ -1,4 +1,3 @@
-// routes/eventForm.routes.ts
 import express from 'express';
 import { userAuth } from '../middleware/authMiddleware';
 import {
@@ -11,10 +10,12 @@ import {
 import {
   submitEventForm,
   getPlayerSubmissionsForEvent,
+  getPlayerSubmissionForEventById,
   reviewPlayerSubmission,
   updateFormFieldsByPlayer,
   deleteSubmittedForm,
   updateFinalStatsByOfficial,
+  getMySubmissions,
 } from '../controllers/playerSubmission.controller';
 
 import { reviewSubmissionSchema } from '../validations/reviewSubmissionSchema';
@@ -47,10 +48,16 @@ router.patch('/submissions/:submissionId', userAuth, updateFormFieldsByPlayer);
 // Delete player’s own submission
 router.delete('/submissions/:submissionId', userAuth, deleteSubmittedForm);
 
+// Get logged-in player's submissions
+router.get('/:eventId/submissions/me', userAuth, getMySubmissions); // ✅ NEW
+
 // ----------------- EVENT SUBMISSIONS (Official) ------------------
 
 // Get all player submissions for an event
 router.get('/:eventId/submissions', userAuth, getPlayerSubmissionsForEvent);
+
+// Get a specific submission for an event
+router.get('/:eventId/submissions/:submissionId', userAuth, getPlayerSubmissionForEventById); // ✅ NEW
 
 // Update final stats (e.g., weight class, rack height) after weigh-in
 router.patch('/submissions/:submissionId/stats', userAuth, updateFinalStatsByOfficial);
