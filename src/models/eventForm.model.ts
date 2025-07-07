@@ -12,6 +12,8 @@ export interface IEventForm extends Document {
   eventId: mongoose.Types.ObjectId;
   fields: IFormField[];
   createdBy: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const FormFieldSchema = new Schema<IFormField>({

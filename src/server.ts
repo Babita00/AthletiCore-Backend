@@ -6,6 +6,7 @@ import userRoutes from './routes/user.router';
 import eventRoutes from './routes/event.router';
 import eventFormRoutes from './routes/eventForm.router';
 import announcementRoutes from './routes/announcement.router';
+import attemptRoutes from './routes/liftAttempt.router';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
@@ -49,6 +50,10 @@ app.use('/api/user', userRoutes);
 app.use('/api/event', eventRoutes);
 app.use('/api/form-events', eventFormRoutes);
 app.use('/api/announcement', announcementRoutes);
+app.use('/api/attempt', attemptRoutes);
+
+import liveScoreboardRoutes from './routes/liveScoreboard.routes';
+app.use('/api/live-scoreboard', liveScoreboardRoutes);
 
 // Server listen
 const PORT = process.env.PORT || 5000;
