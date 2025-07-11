@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createAnnouncement,
   getAnnouncements,
+  getAnnouncementById,
   updateAnnouncement,
   deleteAnnouncement,
 } from '../controllers/announcement.controller';
@@ -18,6 +19,7 @@ router.post(
   validate(createAnnouncementSchema),
   createAnnouncement,
 );
+router.get('/:id', getAnnouncementById);
 router.get('/', getAnnouncements);
 router.patch('/:id', userAuth, uploadAnnouncementFiles.array('attachments', 5), updateAnnouncement);
 router.delete('/:id', userAuth, deleteAnnouncement);

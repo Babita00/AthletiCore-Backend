@@ -64,6 +64,31 @@ export const getAnnouncements = async (req: Request, res: Response) => {
   }
 };
 
+export const getAnnouncementById = async (req: Request, res: Response) => {
+  try {
+    const announcementId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(announcementId)) {
+      res.status(400).json({ message: 'Invalid announcement ID' });
+      return;
+    }
+
+    const announcement = await Announcement.findById(announcementId);
+
+    if (!announcement) {
+      res.status(404).json({ message: 'Announcement not found' });
+      return;
+    }
+
+    res.status(200).json(announcement);
+    return;
+  } catch (err) {
+    console.error('Get announcement by ID error', err);
+    res.status(500).json({ message: 'Server error' });
+    return;
+  }
+};
+
 export const updateAnnouncement = async (req: Request, res: Response) => {
   try {
     const announcementId = req.params.id;
