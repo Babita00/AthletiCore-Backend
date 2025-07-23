@@ -25,9 +25,9 @@ export const getLiveScoreboard = async (req: Request, res: Response) => {
           .filter((a) => a.liftType === liftType)
           .sort((a, b) => a.attemptNumber - b.attemptNumber);
 
-        const attempts = lifts.map((l) => (l.status === 'good' ? l.actualWeight : '✗'));
+        const attempts = lifts.map((l) => (l.status === 'pass' ? l.actualWeight : '✗'));
         const best = Math.max(
-          ...lifts.filter((l) => l.status === 'good').map((l) => l.actualWeight || 0),
+          ...lifts.filter((l) => l.status === 'pass').map((l) => l.actualWeight || 0),
         );
 
         return { attempts, best };
@@ -101,11 +101,11 @@ export const getSquatLeaderboard = async (req: Request, res: Response) => {
 
       const sortedAttempts = userAttempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
       const attemptResults = sortedAttempts.map((a) =>
-        a.status === 'good' ? a.actualWeight : '✗',
+        a.status === 'pass' ? a.actualWeight : '✗',
       );
 
       const bestSquat = Math.max(
-        ...sortedAttempts.filter((a) => a.status === 'good').map((a) => a.actualWeight || 0),
+        ...sortedAttempts.filter((a) => a.status === 'pass').map((a) => a.actualWeight || 0),
       );
 
       if (bestSquat === 0) continue;
@@ -154,11 +154,11 @@ export const getBenchLeaderboard = async (req: Request, res: Response) => {
 
       const sortedAttempts = userAttempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
       const attemptResults = sortedAttempts.map((a) =>
-        a.status === 'good' ? a.actualWeight : '✗',
+        a.status === 'pass' ? a.actualWeight : '✗',
       );
 
       const bestBench = Math.max(
-        ...sortedAttempts.filter((a) => a.status === 'good').map((a) => a.actualWeight || 0),
+        ...sortedAttempts.filter((a) => a.status === 'pass').map((a) => a.actualWeight || 0),
       );
 
       if (bestBench === 0) continue;
@@ -207,11 +207,11 @@ export const getDeadliftLeaderboard = async (req: Request, res: Response) => {
 
       const sortedAttempts = userAttempts.sort((a, b) => a.attemptNumber - b.attemptNumber);
       const attemptResults = sortedAttempts.map((a) =>
-        a.status === 'good' ? a.actualWeight : '✗',
+        a.status === 'pass' ? a.actualWeight : '✗',
       );
 
       const bestDeadlift = Math.max(
-        ...sortedAttempts.filter((a) => a.status === 'good').map((a) => a.actualWeight || 0),
+        ...sortedAttempts.filter((a) => a.status === 'pass').map((a) => a.actualWeight || 0),
       );
 
       if (bestDeadlift === 0) continue;

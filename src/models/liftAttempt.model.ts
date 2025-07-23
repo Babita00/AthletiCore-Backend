@@ -8,7 +8,7 @@ export interface IAttempt extends Document {
   attemptNumber: 1 | 2 | 3;
   declaredWeight: number;
   actualWeight?: number;
-  status?: 'good' | 'fail' | 'pending';
+  status?: 'pass' | 'fail' | 'pending';
   isCurrent?: boolean;
   completedAt?: Date;
   updateCount?: number;

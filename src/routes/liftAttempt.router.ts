@@ -3,11 +3,13 @@ import { userAuth } from '../middleware/authMiddleware';
 const router = Router();
 import {
   initializeLiftAttempts,
+  getLiftAttempts,
   submitNextWeight,
   updateLiftStatus,
   getCurrentLifters,
 } from '../controllers/liftAttempt.controller';
-router.post('/init-lifts', userAuth, initializeLiftAttempts); // admin or auto-call
+router.post('/init-lifts', userAuth, initializeLiftAttempts);
+router.get('/:userId/:eventId', userAuth, getLiftAttempts);
 router.patch('/:attemptId/submit-weight', userAuth, submitNextWeight);
 router.patch('/:attemptId/update-status', userAuth, updateLiftStatus);
 router.get('/event/:eventId/current-lifters', getCurrentLifters);

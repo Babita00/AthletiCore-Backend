@@ -5,15 +5,27 @@ import User from '../models/user.model';
 import Event from '../models/event.model';
 import PlayerSubmission from '../models/playerSubmission.model';
 
-// Initialize 3 attempts for each lift type
+type LiftType = 'squat' | 'bench' | 'deadlift';
+
+interface AttemptDTO {
+  id: string;
+  round: 1 | 2 | 3;
+  weight: number;
+  status: 'available' | 'pending' | 'submitted';
+  locked: boolean;
+  changes: number;
+  result: 'success' | 'failed' | null;
+}
+
+// ✅ Initialize 3 attempts for each lift type
 export const initializeLiftAttempts = async (req: Request, res: Response) => {
   try {
     const { userId, eventId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
-      res.status(400).json({ message: 'Invalid user or event ID' });
-      return;
-    }
+    // if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+    //   res.status(400).json({ message: 'Invalid user or event ID' });
+    //   return;
+    // }
 
     const user = await User.findById(userId);
     if (!user) {
@@ -27,20 +39,22 @@ export const initializeLiftAttempts = async (req: Request, res: Response) => {
       return;
     }
 
-    const submission = await PlayerSubmission.findOne({
-      user: userId,
-      event: eventId,
-    });
-
+    const submission = await PlayerSubmission.findOne({ user: userId, event: eventId });
     if (!submission) {
       res.status(404).json({ message: 'Player submission not found' });
+      return;
+    }
+
+    const alreadyExists = await LiftAttempt.exists({ user: userId, event: eventId });
+    if (alreadyExists) {
+      res.status(200).json({ message: 'Lift attempts already initialized' });
       return;
     }
 
     const initialWeightField = submission.formFields.find((field) => field.key === 'initialWeight');
     const declaredWeight = initialWeightField ? Number(initialWeightField.value) : 0;
 
-    const liftTypes = ['squat', 'bench', 'deadlift'];
+    const liftTypes: LiftType[] = ['squat', 'bench', 'deadlift'];
 
     for (const liftType of liftTypes) {
       for (let attemptNumber = 1; attemptNumber <= 3; attemptNumber++) {
@@ -55,10 +69,83 @@ export const initializeLiftAttempts = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(201).json({ message: 'Lift attempts initialized successfully' });
+    const attempts = await LiftAttempt.find({ user: userId, event: eventId }).lean();
+
+    const groupedAttempts: Record<LiftType, AttemptDTO[]> = {
+      squat: [],
+      bench: [],
+      deadlift: [],
+    };
+
+    for (const attempt of attempts) {
+      const lift = attempt.liftType as LiftType;
+
+      const status =
+        attempt.status === 'pending' ? (attempt.isCurrent ? 'available' : 'pending') : 'submitted';
+
+      const result =
+        attempt.status === 'pass' ? 'success' : attempt.status === 'fail' ? 'failed' : null;
+
+      groupedAttempts[lift].push({
+        id: attempt._id.toString(),
+        round: attempt.attemptNumber,
+        weight: attempt.declaredWeight,
+        status,
+        locked: !attempt.isCurrent,
+        changes: (attempt.attemptNumber === 2 ? 1 : 2) - (attempt.updateCount || 0),
+        result,
+      });
+    }
+
+    res.status(201).json(groupedAttempts);
   } catch (err) {
     console.error('Initialize lift attempts error:', err);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getLiftAttempts = async (req: Request, res: Response) => {
+  try {
+    const { userId, eventId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      res.status(400).json({ message: 'Invalid user or event ID' });
+      return;
+    }
+
+    const attempts = await LiftAttempt.find({ user: userId, event: eventId }).lean();
+
+    const groupedAttempts: Record<LiftType, AttemptDTO[]> = {
+      squat: [],
+      bench: [],
+      deadlift: [],
+    };
+
+    for (const attempt of attempts) {
+      const lift = attempt.liftType as LiftType;
+      if (!['squat', 'bench', 'deadlift'].includes(lift)) continue;
+
+      const status: AttemptDTO['status'] =
+        attempt.status === 'pending' ? (attempt.isCurrent ? 'available' : 'pending') : 'submitted';
+
+      const result: AttemptDTO['result'] =
+        attempt.status === 'pass' ? 'success' : attempt.status === 'fail' ? 'failed' : null;
+
+      groupedAttempts[lift].push({
+        id: attempt._id.toString(),
+        round: attempt.attemptNumber,
+        weight: attempt.declaredWeight,
+        status,
+        locked: !attempt.isCurrent,
+        changes: (attempt.attemptNumber === 2 ? 1 : 2) - (attempt.updateCount || 0),
+        result,
+      });
+    }
+
+    res.status(200).json(groupedAttempts);
+  } catch (err) {
+    console.error('Get lift attempts error:', err);
+    res.status(500).json({ message: 'Error fetching lift attempts' });
   }
 };
 

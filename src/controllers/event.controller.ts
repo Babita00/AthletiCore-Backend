@@ -12,19 +12,32 @@ export const createEvent = async (req: Request, res: Response) => {
       return;
     }
 
-    const {
-      title,
-      description,
-      venue,
-      date,
-      weightCategories,
-      competitionType,
-      prizes,
-      coordinator,
-      otherOfficial,
-      organizerPhoneNumber,
-    } = req.body;
+    const { title, description, venue, date, competitionType, organizerPhoneNumber } = req.body;
 
+    // ✅ Parse JSON string fields
+    let weightCategories = [];
+    let prizes = [];
+    let coordinator = null;
+    let otherOfficial = null;
+
+    try {
+      weightCategories = JSON.parse(req.body.weightCategories || '[]');
+      prizes = JSON.parse(req.body.prizes || '[]');
+      coordinator = JSON.parse(req.body.coordinator || '{}');
+      otherOfficial = JSON.parse(req.body.otherOfficial || '{}');
+    } catch (err) {
+      console.error('Invalid JSON fields:', err);
+      res.status(400).json({ message: 'Invalid JSON in one or more fields' });
+      return;
+    }
+
+    // ✅ Optional: Validate required fields manually
+    if (!title || !description || !venue || !date) {
+      res.status(400).json({ message: 'Missing required fields' });
+      return;
+    }
+
+    // ✅ Handle uploaded image URL
     let eventImage;
     if (req.file) {
       const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -47,16 +60,15 @@ export const createEvent = async (req: Request, res: Response) => {
     });
 
     const savedEvent = await newEvent.save();
-
     const populatedEvent = await savedEvent.populate('createdby', 'fullName');
+
     res.status(201).json({
       message: 'Event created',
       event: populatedEvent,
     });
-
     return;
   } catch (err) {
-    console.error('Create event error', err);
+    console.error('Create event error:', err);
     res.status(500).json({ message: 'Server error' });
     return;
   }
