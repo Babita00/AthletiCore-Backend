@@ -12,72 +12,171 @@ export const getLiveScoreboard = async (req: Request, res: Response) => {
     const { eventId } = req.params;
 
     const attempts = await LiftAttempt.find({ event: eventId }).lean();
-    const submissions = await PlayerSubmission.find({ event: eventId }).lean();
+    const submissions = await PlayerSubmission.find({ event: eventId, status: 'approved' }).lean();
 
     const scoreboard = [];
 
     for (const submission of submissions) {
       const userId = submission.user.toString();
-      const userAttempts = attempts.filter((a) => a.user.toString() === userId);
+      const userAttempts = attempts
+        .filter((a) => a.user.toString() === userId)
+        .sort((a, b) => a.attemptNumber - b.attemptNumber);
 
-      const getAttempts = (liftType: 'squat' | 'bench' | 'deadlift') => {
-        const lifts = userAttempts
-          .filter((a) => a.liftType === liftType)
-          .sort((a, b) => a.attemptNumber - b.attemptNumber);
+      const firstName = getField(submission.formFields, 'firstName');
+      const lastName = getField(submission.formFields, 'lastName');
+      const gender =
+        getField(submission.formFields, 'gender')?.toLowerCase() === 'female' ? 'female' : 'male';
 
-        const attempts = lifts.map((l) => (l.status === 'pass' ? l.actualWeight : '✗'));
-        const best = Math.max(
-          ...lifts.filter((l) => l.status === 'pass').map((l) => l.actualWeight || 0),
-        );
+      const bodyWeight =
+        submission.finalWeight || parseFloat(getField(submission.formFields, 'bodyWeight')) || 0;
 
-        return { attempts, best };
-      };
+      const attemptsFormatted = userAttempts.map((attempt) => {
+        const weight = attempt.actualWeight ?? 0;
+        const ipfgl = calculateIPFGLScore(bodyWeight, weight, gender);
+        return {
+          weight,
+          ipfgl: parseFloat(ipfgl.toFixed(2)),
+          status: attempt.status === 'pass' ? 'success' : 'fail',
+        };
+      });
 
-      const { attempts: squats, best: bestSQ } = getAttempts('squat');
-      const { attempts: benches, best: bestBP } = getAttempts('bench');
-      const { attempts: deadlifts, best: bestDL } = getAttempts('deadlift');
-
-      const total = bestSQ + bestBP + bestDL;
-
-      const form = submission.formFields || [];
-      const firstName = getField(form, 'firstName');
-      const lastName = getField(form, 'lastName');
-      const team = getField(form, 'team');
-      const birthYear = getField(form, 'birthYear');
-      const division = getField(form, 'division');
-      const gender = getField(form, 'gender')?.toLowerCase() || 'male';
-      const bodyWeight = parseFloat(getField(form, 'bodyWeight')) || 0;
-      const weightClass = Math.ceil(bodyWeight);
-
-      const ipfGL = calculateIPFGLScore(bodyWeight, total, gender === 'female' ? 'female' : 'male');
-      const ipfCoeff = calculateIPFCoefficient(gender === 'female' ? 'female' : 'male', bodyWeight);
+      const bestIPFGL = Math.max(
+        ...attemptsFormatted.filter((a) => a.status === 'success').map((a) => a.ipfgl || 0),
+      );
 
       scoreboard.push({
-        lastName,
-        firstName,
-        team,
-        birthYear,
-        division,
-        bodyWeight,
-        weightClass,
-        squat: squats,
-        bestSquat: bestSQ,
-        bench: benches,
-        bestBench: bestBP,
-        deadlift: deadlifts,
-        bestDeadlift: bestDL,
-        total,
-        ipfGLPts: parseFloat(ipfGL.toFixed(6)),
-        ipfCoeff: parseFloat(ipfCoeff.toFixed(6)),
+        id: submission._id.toString(),
+        playerName: `${firstName} ${lastName}`,
+        attempts: attemptsFormatted,
+        overallIPFGL: parseFloat(bestIPFGL.toFixed(2)),
       });
     }
 
-    res.status(200).json(scoreboard);
-    return;
+    res.status(200).json({
+      count: scoreboard.length,
+      scoreboard,
+    });
   } catch (err) {
     console.error('Live scoreboard error:', err);
     res.status(500).json({ message: 'Server error' });
-    return;
+  }
+};
+
+// Individual player breakdown for detailed lift analysis
+
+export const getIndividualLiftBreakdown = async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+
+    const attempts = await LiftAttempt.find({ event: eventId }).lean();
+    const submissions = await PlayerSubmission.find({ event: eventId, status: 'approved' }).lean();
+
+    const getField = (formFields: { key: string; value: string }[], key: string): string => {
+      return formFields.find((f) => f.key === key)?.value || '';
+    };
+
+    const players = [];
+
+    for (const submission of submissions) {
+      const userId = submission.user.toString();
+      const userAttempts = attempts.filter((a) => a.user.toString() === userId);
+
+      const gender =
+        getField(submission.formFields, 'gender')?.toLowerCase() === 'female' ? 'female' : 'male';
+      const bodyWeight =
+        submission.finalWeight || parseFloat(getField(submission.formFields, 'bodyWeight')) || 0;
+      const firstName = getField(submission.formFields, 'firstName');
+      const lastName = getField(submission.formFields, 'lastName');
+
+      const playerData: any = {
+        id: submission._id.toString(),
+        name: `${firstName} ${lastName}`,
+        data: {
+          squat: {},
+          benchPress: {},
+          deadlift: {},
+          overallTotal: 0,
+        },
+      };
+
+      let overallTotal = 0;
+
+      ['squat', 'bench', 'deadlift'].forEach((liftType) => {
+        const liftKey = liftType === 'bench' ? 'benchPress' : liftType;
+        const liftAttempts = userAttempts
+          .filter((a) => a.liftType === liftType)
+          .sort((a, b) => a.attemptNumber - b.attemptNumber);
+
+        let bestIPFGL = 0;
+
+        liftAttempts.forEach((attempt) => {
+          const weight = attempt.actualWeight ?? 0;
+          const ipfgl = calculateIPFGLScore(bodyWeight, weight, gender);
+          const ipfglRounded = parseFloat(ipfgl.toFixed(1));
+
+          playerData.data[liftKey][`attempt${attempt.attemptNumber}`] = {
+            weight,
+            ipfgl: ipfglRounded,
+          };
+
+          if (attempt.status === 'pass' && ipfgl > bestIPFGL) {
+            bestIPFGL = ipfgl;
+          }
+        });
+
+        playerData.data[liftKey].total = parseFloat(bestIPFGL.toFixed(1));
+        overallTotal += bestIPFGL;
+      });
+
+      playerData.data.overallTotal = parseFloat(overallTotal.toFixed(1));
+      players.push(playerData);
+    }
+
+    res.status(200).json(players);
+  } catch (err) {
+    console.error('Individual player breakdown error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getPlayerMeasurements = async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const submissions = await PlayerSubmission.find({ event: eventId, status: 'approved' }).lean();
+
+    const getField = (formFields: { key: string; value: string }[], key: string): string => {
+      return formFields.find((f) => f.key === key)?.value || '';
+    };
+
+    const result = submissions.map((submission) => {
+      const firstName = getField(submission.formFields, 'firstName');
+      const lastName = getField(submission.formFields, 'lastName');
+      const playerName = `${firstName} ${lastName}`;
+
+      const initialHeight = getField(submission.formFields, 'height');
+      const initialWeight = parseFloat(getField(submission.formFields, 'bodyWeight')) || 0;
+      const initialRackHeight = parseInt(getField(submission.formFields, 'rackHeight')) || 0;
+
+      return {
+        id: submission._id.toString(),
+        playerName,
+        initialData: {
+          height: initialHeight,
+          weight: initialWeight,
+          rackHeight: initialRackHeight,
+        },
+        weighInData: {
+          height: initialHeight, // optionally use submission.finalHeight if needed
+          weight: submission.finalWeight ?? initialWeight,
+          rackHeight: submission.finalRackHeight ?? initialRackHeight,
+        },
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('Player measurement fetch error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

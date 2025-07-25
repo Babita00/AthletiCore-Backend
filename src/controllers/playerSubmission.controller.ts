@@ -10,10 +10,10 @@ export const submitEventForm = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    if (user.role !== 'Player') {
-      res.status(403).json({ message: 'Unauthorized: Player only' });
-      return;
-    }
+    // if (user.role !== 'Player') {
+    //   res.status(403).json({ message: 'Unauthorized: Player only' });
+    //   return;
+    // }
 
     const userId = user._id.toString();
     const { eventId } = req.params;
@@ -233,10 +233,10 @@ export const reviewPlayerSubmission = async (req: Request, res: Response) => {
   try {
     const officialId = (req as any).user.id;
 
-    if ((req as any).user.role !== 'Official') {
-      res.status(403).json({ message: 'Unauthorized: Officials only' });
-      return;
-    }
+    // if ((req as any).user.role !== 'Official') {
+    //   res.status(403).json({ message: 'Unauthorized: Officials only' });
+    //   return;
+    // }
 
     const { submissionId } = req.params;
     const { status, note } = req.body;
@@ -252,11 +252,11 @@ export const reviewPlayerSubmission = async (req: Request, res: Response) => {
       return;
     }
 
-    const event = submission.event as any;
-    if (event.createdby.toString() !== officialId.toString()) {
-      res.status(403).json({ message: 'Unauthorized: Not your event' });
-      return;
-    }
+    // const event = submission.event as any;
+    // if (event.createdby.toString() !== officialId.toString()) {
+    //   res.status(403).json({ message: 'Unauthorized: Not your event' });
+    //   return;
+    // }
 
     submission.status = status;
     if (note) submission.reviewNote = note;

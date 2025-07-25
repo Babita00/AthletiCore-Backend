@@ -1,9 +1,19 @@
-// routes/liveScoreboard.routes.ts
 import { Router } from 'express';
-import { getLiveScoreboard } from '../controllers/liveScoreboard.controller';
+import {
+  getLiveScoreboard,
+  getIndividualLiftBreakdown,
+  getPlayerMeasurements,
+} from '../controllers/liveScoreboard.controller';
 
 const router = Router();
 
-router.get('/:eventId', getLiveScoreboard); // e.g. /api/live-scoreboard/:eventId
+// Live scoreboard data for GameResultsTable
+router.get('/live/:eventId', getLiveScoreboard);
+
+// Detailed breakdown for IndividualPlayerView
+router.get('/breakdown/:eventId', getIndividualLiftBreakdown);
+
+// Player measurements for PlayerMeasurementsTable
+router.get('/measurements/:eventId', getPlayerMeasurements);
 
 export default router;

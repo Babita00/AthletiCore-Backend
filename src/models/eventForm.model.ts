@@ -2,10 +2,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IFormField {
+  id: string; // unique identifier for the field
   fieldName: string; // key provided by official
   fieldType: 'text' | 'number' | 'date' | 'select';
   required: boolean;
   options?: string[]; // for select type
+  value?: string | number; // Add this line to store the value of the field
 }
 
 export interface IEventForm extends Document {
