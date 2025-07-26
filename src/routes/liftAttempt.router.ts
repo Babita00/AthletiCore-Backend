@@ -7,9 +7,11 @@ import {
   submitNextWeight,
   updateLiftStatus,
   getCurrentLifters,
+  getCurrentAttemptsForUser,
 } from '../controllers/liftAttempt.controller';
 router.post('/init-lifts', userAuth, initializeLiftAttempts);
 router.get('/:userId/:eventId', userAuth, getLiftAttempts);
+router.get('/:userId/:eventId/current', userAuth, getCurrentAttemptsForUser);
 router.patch('/:attemptId/submit-weight', userAuth, submitNextWeight);
 router.patch('/:attemptId/update-status', userAuth, updateLiftStatus);
 router.get('/event/:eventId/current-lifters', getCurrentLifters);

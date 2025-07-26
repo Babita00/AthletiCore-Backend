@@ -5,6 +5,7 @@ import User from '../models/user.model';
 import Event from '../models/event.model';
 import PlayerSubmission from '../models/playerSubmission.model';
 import EventForm from '../models/eventForm.model';
+import { FORM_FIELD_KEYS, LIFT_TYPES, ATTEMPT_STATUS } from '../constants';
 type LiftType = 'squat' | 'bench' | 'deadlift';
 
 interface AttemptDTO {
@@ -20,7 +21,13 @@ interface AttemptDTO {
 // ✅ Initialize 3 attempts for each lift type
 export const initializeLiftAttempts = async (req: Request, res: Response) => {
   try {
-    const { userId, eventId } = req.params;
+    const { eventId } = req.body;
+    const userId = (req as any).user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      res.status(400).json({ message: 'Invalid user or event ID' });
+      return;
+    }
 
     // ✅ Use correct keys for query
     const registrationForm = await PlayerSubmission.findOne({ event: eventId, user: userId });
@@ -30,58 +37,105 @@ export const initializeLiftAttempts = async (req: Request, res: Response) => {
       return;
     }
 
-    // ✅ Use correct field name: formFields
-    const squatInitialWeight =
-      registrationForm.formFields.find((field) => field.key === 'static-initial-weight-for-squat')
-        ?.value || 0;
-
-    const benchPressInitialWeight =
-      registrationForm.formFields.find(
-        (field) => field.key === 'static-initial-weight-for-bench-press',
-      )?.value || 0;
-
-    const deadliftInitialWeight =
-      registrationForm.formFields.find(
-        (field) => field.key === 'static-initial-weight-for-deadlift',
-      )?.value || 0;
-
-    const liftAttempts = {
-      squat: [
-        { attemptNumber: 1, weight: squatInitialWeight, status: 'pending' },
-        { attemptNumber: 2, weight: 0, status: 'pending' },
-        { attemptNumber: 3, weight: 0, status: 'pending' },
-      ],
-      benchPress: [
-        { attemptNumber: 1, weight: benchPressInitialWeight, status: 'pending' },
-        { attemptNumber: 2, weight: 0, status: 'pending' },
-        { attemptNumber: 3, weight: 0, status: 'pending' },
-      ],
-      deadlift: [
-        { attemptNumber: 1, weight: deadliftInitialWeight, status: 'pending' },
-        { attemptNumber: 2, weight: 0, status: 'pending' },
-        { attemptNumber: 3, weight: 0, status: 'pending' },
-      ],
+    // ✅ Use correct field name: formFields - Flexible approach
+    // Flexible field extraction - try multiple patterns
+    const findWeightField = (patterns: string[]) => {
+      for (const pattern of patterns) {
+        const field = registrationForm.formFields.find(
+          (f) => f.key?.toLowerCase().includes(pattern.toLowerCase()) || f.key === pattern,
+        );
+        if (field && field.value) {
+          return parseFloat(field.value.toString()) || 0;
+        }
+      }
+      return 0;
     };
 
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
+    const squatInitialWeight = findWeightField([
+      FORM_FIELD_KEYS.INITIAL_SQUAT_WEIGHT,
+      'static-initial-weight-for-squat',
+      'initialWeightForSquat',
+      'squatWeight',
+      'squat',
+      'field_2', // Based on your earlier data
+    ]);
+
+    const benchPressInitialWeight = findWeightField([
+      FORM_FIELD_KEYS.INITIAL_BENCH_WEIGHT,
+      'static-initial-weight-for-bench-press',
+      'initialWeightForBench',
+      'benchWeight',
+      'bench',
+      'field_3', // Based on your earlier data
+    ]);
+
+    const deadliftInitialWeight = findWeightField([
+      FORM_FIELD_KEYS.INITIAL_DEADLIFT_WEIGHT,
+      'static-initial-weight-for-deadlift',
+      'initialWeightForDeadlift',
+      'deadliftWeight',
+      'deadlift',
+      'field_4', // Based on your earlier data
+    ]);
+
+    // Check if lift attempts already exist for this user and event
+    const existingAttempts = await LiftAttempt.find({ user: userId, event: eventId });
+    if (existingAttempts.length > 0) {
+      res
+        .status(409)
+        .json({ message: 'Lift attempts already initialized for this user and event' });
       return;
     }
 
-    if (user.role !== 'Player') {
-      res.status(403).json({ message: 'User is not a player' });
-      return;
+    // Create LiftAttempt documents instead of updating user
+    const liftAttempts = [];
+
+    // Create squat attempts
+    for (let i = 1; i <= 3; i++) {
+      liftAttempts.push({
+        user: userId,
+        event: eventId,
+        liftType: 'squat',
+        attemptNumber: i,
+        declaredWeight: i === 1 ? parseFloat(squatInitialWeight.toString()) || 0 : 0,
+        status: 'pending',
+        isCurrent: i === 1, // First attempt is current
+      });
     }
 
-    const updatedUser = await User.updateOne({ _id: userId }, { $set: { liftAttempts } });
-
-    if (updatedUser.modifiedCount === 0) {
-      res.status(400).json({ message: 'Failed to initialize lift attempts' });
-      return;
+    // Create bench press attempts
+    for (let i = 1; i <= 3; i++) {
+      liftAttempts.push({
+        user: userId,
+        event: eventId,
+        liftType: 'bench',
+        attemptNumber: i,
+        declaredWeight: i === 1 ? parseFloat(benchPressInitialWeight.toString()) || 0 : 0,
+        status: 'pending',
+        isCurrent: i === 1, // First attempt is current
+      });
     }
 
-    res.status(200).json({ message: 'Lift attempts initialized', liftAttempts });
+    // Create deadlift attempts
+    for (let i = 1; i <= 3; i++) {
+      liftAttempts.push({
+        user: userId,
+        event: eventId,
+        liftType: 'deadlift',
+        attemptNumber: i,
+        declaredWeight: i === 1 ? parseFloat(deadliftInitialWeight.toString()) || 0 : 0,
+        status: 'pending',
+        isCurrent: i === 1, // First attempt is current
+      });
+    }
+
+    // Insert all attempts
+    const createdAttempts = await LiftAttempt.insertMany(liftAttempts);
+
+    res.status(200).json({
+      message: 'Lift attempts initialized successfully',
+      attempts: createdAttempts,
+    });
   } catch (err) {
     console.error('Error initializing lift attempts:', err);
     res.status(500).json({ message: 'Server error' });
@@ -133,7 +187,7 @@ export const getLiftAttempts = async (req: Request, res: Response) => {
   }
 };
 
-// Player updates nextWeight on the current attempt
+// Player updates nextWeight for current or future attempts
 export const submitNextWeight = async (req: Request, res: Response) => {
   try {
     const { nextWeight } = req.body;
@@ -145,15 +199,35 @@ export const submitNextWeight = async (req: Request, res: Response) => {
       return;
     }
 
-    if (!attempt.isCurrent) {
-      res.status(400).json({ message: 'Cannot update non-current attempt' });
+    // Check if attempt is already completed
+    if (attempt.status !== 'pending') {
+      res.status(400).json({ message: 'Cannot update completed attempt' });
       return;
     }
 
-    // Prevent update on first attempt
+    // Prevent update on first attempt (initial weight should remain)
     if (attempt.attemptNumber === 1) {
       res.status(400).json({ message: 'First attempt weight cannot be changed' });
       return;
+    }
+
+    // Allow updating current attempt OR future attempts
+    // Check if this is a valid future attempt (previous attempts must exist)
+    if (!attempt.isCurrent) {
+      const previousAttempt = await LiftAttempt.findOne({
+        user: attempt.user,
+        event: attempt.event,
+        liftType: attempt.liftType,
+        attemptNumber: attempt.attemptNumber - 1,
+      });
+
+      if (!previousAttempt) {
+        res.status(400).json({ message: 'Previous attempt not found' });
+        return;
+      }
+
+      // For future attempts, only allow if previous attempt exists (no sequence restriction)
+      console.log(`Updating future attempt ${attempt.attemptNumber} for ${attempt.liftType}`);
     }
 
     // Define max allowed updates based on attempt number
@@ -238,6 +312,39 @@ export const getCurrentLifters = async (req: Request, res: Response) => {
 
     res.status(200).json(currentLifters);
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get current attempts for a specific user in an event
+export const getCurrentAttemptsForUser = async (req: Request, res: Response) => {
+  try {
+    const { userId, eventId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      res.status(400).json({ message: 'Invalid user or event ID' });
+      return;
+    }
+
+    const currentAttempts = await LiftAttempt.find({
+      user: userId,
+      event: eventId,
+      isCurrent: true,
+    });
+
+    const attemptsByLift = {
+      squat: currentAttempts.find((a) => a.liftType === 'squat') || null,
+      bench: currentAttempts.find((a) => a.liftType === 'bench') || null,
+      deadlift: currentAttempts.find((a) => a.liftType === 'deadlift') || null,
+    };
+
+    res.status(200).json({
+      message: 'Current attempts for user',
+      currentAttempts: attemptsByLift,
+      totalCurrentAttempts: currentAttempts.length,
+    });
+  } catch (err) {
+    console.error('Get current attempts error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

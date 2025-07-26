@@ -323,3 +323,121 @@ export const updateFinalStatsByOfficial = async (req: Request, res: Response) =>
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// New function to get registration data with current attempt weights
+export const getPlayerRegistrationWithAttempts = async (req: Request, res: Response) => {
+  try {
+    const { eventId, userId } = req.params;
+    const requestingUserId = (req as any).user._id;
+
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(eventId) || !mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({ message: 'Invalid event or user ID' });
+      return;
+    }
+
+    // Get the registration submission
+    const submission = await PlayerSubmission.findOne({
+      event: eventId,
+      user: userId,
+    })
+      .populate('user', 'fullName email')
+      .populate('event', 'title');
+
+    if (!submission) {
+      res.status(404).json({ message: 'Registration not found' });
+      return;
+    }
+
+    // Get current lift attempts for this user and event
+    const LiftAttempt = require('../models/liftAttempt.model').default;
+    const attempts = await LiftAttempt.find({
+      user: userId,
+      event: eventId,
+    }).sort({ liftType: 1, attemptNumber: 1 });
+
+    // Organize attempts by lift type
+    const attemptsByLift = {
+      squat: attempts.filter((a: any) => a.liftType === 'squat'),
+      bench: attempts.filter((a: any) => a.liftType === 'bench'),
+      deadlift: attempts.filter((a: any) => a.liftType === 'deadlift'),
+    };
+
+    // Helper function to get field value from formFields
+    const getFieldValue = (key: string) => {
+      return submission.formFields.find((field) => field.key === key)?.value || '';
+    };
+
+    // Build enhanced registration data with attempt information
+    const registrationData = {
+      id: submission._id,
+      user: submission.user,
+      event: submission.event,
+      status: submission.status,
+      reviewNote: submission.reviewNote,
+      createdAt: submission.createdAt,
+      updatedAt: submission.updatedAt,
+
+      // Basic registration fields
+      personalInfo: {
+        firstName: getFieldValue('firstName'),
+        lastName: getFieldValue('lastName'),
+        age: getFieldValue('age'),
+        gender: getFieldValue('gender'),
+        bodyWeight: getFieldValue('bodyWeight'),
+        height: getFieldValue('height'),
+        rackHeight: getFieldValue('rackHeight'),
+      },
+
+      // Initial weights from registration
+      initialWeights: {
+        squat: getFieldValue('static-initial-weight-for-squat'),
+        benchPress: getFieldValue('static-initial-weight-for-bench-press'),
+        deadlift: getFieldValue('static-initial-weight-for-deadlift'),
+      },
+
+      // Current attempt data (updated weights)
+      currentAttempts: {
+        squat: attemptsByLift.squat.map((attempt: any) => ({
+          attemptNumber: attempt.attemptNumber,
+          declaredWeight: attempt.declaredWeight,
+          actualWeight: attempt.actualWeight,
+          status: attempt.status,
+          isCurrent: attempt.isCurrent,
+          completedAt: attempt.completedAt,
+        })),
+        bench: attemptsByLift.bench.map((attempt: any) => ({
+          attemptNumber: attempt.attemptNumber,
+          declaredWeight: attempt.declaredWeight,
+          actualWeight: attempt.actualWeight,
+          status: attempt.status,
+          isCurrent: attempt.isCurrent,
+          completedAt: attempt.completedAt,
+        })),
+        deadlift: attemptsByLift.deadlift.map((attempt: any) => ({
+          attemptNumber: attempt.attemptNumber,
+          declaredWeight: attempt.declaredWeight,
+          actualWeight: attempt.actualWeight,
+          status: attempt.status,
+          isCurrent: attempt.isCurrent,
+          completedAt: attempt.completedAt,
+        })),
+      },
+
+      // Final measurements (updated by officials)
+      finalMeasurements: {
+        height: submission.finalHeight,
+        weight: submission.finalWeight,
+        rackHeight: submission.finalRackHeight,
+      },
+
+      // All form fields for backward compatibility
+      formFields: submission.formFields,
+    };
+
+    res.status(200).json(registrationData);
+  } catch (err) {
+    console.error('Error fetching registration with attempts:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

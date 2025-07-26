@@ -16,6 +16,7 @@ import {
   deleteSubmittedForm,
   updateFinalStatsByOfficial,
   getMySubmissions,
+  getPlayerRegistrationWithAttempts,
 } from '../controllers/playerSubmission.controller';
 
 import { reviewSubmissionSchema } from '../validations/reviewSubmissionSchema';
@@ -58,6 +59,13 @@ router.get('/:eventId/submissions', userAuth, getPlayerSubmissionsForEvent);
 
 // Get a specific submission for an event
 router.get('/:eventId/submissions/:submissionId', userAuth, getPlayerSubmissionForEventById); // ✅ NEW
+
+// Get registration data with current attempt weights (for registration view)
+router.get(
+  '/:eventId/registrations/:userId/with-attempts',
+  userAuth,
+  getPlayerRegistrationWithAttempts,
+);
 
 // Update final stats (e.g., weight class, rack height) after weigh-in
 router.patch('/submissions/:submissionId/stats', userAuth, updateFinalStatsByOfficial);
